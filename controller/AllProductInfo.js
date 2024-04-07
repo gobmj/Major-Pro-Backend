@@ -17,6 +17,7 @@ const chartData = async (req, res) => {
         const payment = await Payment.find();
         const product = await Product.find();
         const review = await Review.find();
+        // console.log(payment)
         res.send({ review, product, payment, wishlist, cart });
     } catch (error) {
         res.send(error);
@@ -30,8 +31,8 @@ const userChartData = async (req, res) => {
         const token = req.header('Authorization');
         const data = jwt.verify(token, process.env.JWT_SECRET)
         req.user = data.user
-        console.log(req.user.id)
-        const payment = await Payment.find();
+        // console.log(req.user.id)
+        const payment = await Payment.find({ storeId: req.user.id });
         // console.log(payment)
         // console.log("hello")
         // console.log(product);
@@ -44,6 +45,7 @@ const userChartData = async (req, res) => {
     } catch (error) {
         res.send(error);
     }
+
 }
 
 
