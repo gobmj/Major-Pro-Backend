@@ -1,5 +1,18 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const ProductSchema = new Schema({
+    name: String,
+    brand: String,
+    price: Number,
+    category: String,
+    image: String,
+    rating: Number,
+    type: String,
+    author: String,
+    description: String,
+    gender: String,
+    count: { type: Number, default: 0 }
+});
 
 const UserSchema = new Schema({
     firstName: {
@@ -39,7 +52,8 @@ const UserSchema = new Schema({
     },
     userState: {
         type: String
-    }
+    },
+    products: [ProductSchema] 
 
 }, { timestamps: true });
 module.exports = mongoose.model('user', UserSchema)

@@ -160,17 +160,61 @@ const userPaymentDetails = async (req, res) => {
 }
 
 const addProduct = async (req, res) => {
-    const { name, brand, price, category, image, rating, type, author, description, gender } = req.body;
+    const { name, brand, price, category, image, rating, type, author, description, gender, count } = req.body;
     try {
-        await Product.create({ name, brand, price, category, image, rating, type, author, description, gender })
-        success = true
-        res.send(success)
+        console.log(req.user);
+        // Find the product with the same name and price
+        let existingProduct = await Product.findOne({ name, price });
+        let user = await User.findById(req.user.id);
+        user.products = user.products || [];
+
+        if (existingProduct) {
+            // Update count
+            existingProduct.count = parseInt(existingProduct.count) + parseInt(count);
+            console.log(existingProduct.count);
+            // Check if req.user.id is not already in the addedBy array
+            if (!existingProduct.addedBy.includes(req.user.id)) {
+                existingProduct.addedBy.push(req.user.id);
+            }
+            // Save the updated product
+            await existingProduct.save();
+
+            // Add product to the user's products array
+            user.products.push({...existingProduct, count: count});
+            await user.save();
+        } else {
+            // If the product doesn't exist, create a new one
+            const newProduct = await Product.create({ 
+                name, 
+                brand, 
+                price, 
+                category, 
+                image, 
+                rating, 
+                type, 
+                author, 
+                description, 
+                gender, 
+                count, 
+                addedBy: [req.user._id] 
+            });
+            // Add product to the user's products array
+            user.products.push(newProduct);
+            await user.save();
+        }
+
+        // Send success response
+        res.send(true);
 
     } catch (error) {
         console.log(error);
-        return res.status(400).send(error)
+        return res.status(400).send(error);
     }
-}
+};
+
+const addExistingProduct = async (req, res) => {
+    
+};
 
 const deleteProduct = async (req, res) => {
     const { id } = req.params;
@@ -194,5 +238,5 @@ module.exports = {
     getUserCart, getUserWishlist,
     getUserReview, deleteUserReview,
     deleteUserCartItem, deleteUserWishlistItem,
-    updateProductDetails, userPaymentDetails, addProduct, deleteProduct
+    updateProductDetails, userPaymentDetails, addProduct, deleteProduct, addExistingProduct
 }

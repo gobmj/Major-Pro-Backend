@@ -34,7 +34,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 
 
 
-app.use(checkOrigin);
+// app.use(checkOrigin);
 
 app.use('/api/auth', auth)
 

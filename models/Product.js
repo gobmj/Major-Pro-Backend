@@ -11,6 +11,7 @@ const ProductSchema = new Schema({
     author: String,
     description: String,
     gender: String,
-})
-
+    count: { type: Number, default: 0 }, // Product count
+    addedBy: [{ type: Schema.Types.ObjectId, ref: 'User' }] // Array to store user IDs
+});
 module.exports = mongoose.model("product", ProductSchema)

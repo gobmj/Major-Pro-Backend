@@ -20,4 +20,6 @@ const chartData = async (req, res) => {
 
     }
 }
+
+
 module.exports = { chartData }
