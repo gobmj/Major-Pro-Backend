@@ -53,7 +53,15 @@ const UserSchema = new Schema({
     userState: {
         type: String
     },
-    products: [ProductSchema] 
+    longitude:{
+        type:Number,
+        default:0
+    },
+    latitude:{
+        type:Number,
+        default:0
+    },
+    products: [{type: Object}] 
 
 }, { timestamps: true });
 module.exports = mongoose.model('user', UserSchema)

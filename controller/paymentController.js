@@ -1,6 +1,8 @@
 const Razorpay = require('razorpay');
+const Product = require("../models/Product")
 const crypto = require('crypto');
 const Payment = require('../models/Payment');
+const User = require('../models/User');
 const Cart = require('../models/Cart');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
@@ -15,33 +17,107 @@ const instance = new Razorpay({
   key_id: process.env.RAZORPAY_API_KEY,
   key_secret: process.env.RAZORPAY_API_SECRET,
 });
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
 const checkout = async (req, res) => {
-
   try {
-    const { amount, userId, productDetails, userDetails } = req.body
-    totalAmount = Number(amount)
-    userInfo = userId
-    productInfo = JSON.parse(productDetails)
-    userData = JSON.parse(userDetails)
+      const { amount, userId, productDetails, userDetails,longitude,latitude } = req.body;
+      const totalAmount = Number(amount);
+      const userInfo = userId;
+      const productInfo = JSON.parse(productDetails);
+      const userData = JSON.parse(userDetails);
+      const userLatitude = parseFloat(latitude);
+      const userLongitude = parseFloat(longitude);
 
 
-    const options = {
-      amount: Number(amount * 100),
-      currency: "INR",
-    };
-    const order = await instance.orders.create(options);
+      let shopIds = [];
+      const productDetailsPromises = productInfo.map(async (item) => {
+        const productId = item.productId._id;
+        const product = await Product.findById(productId);
+    
+        return { product };
+      });
+      const productDetail = await Promise.all(productDetailsPromises);
+      productDetail[0].product.addedBy.map((item) => {
+        console.log(item);
+        shopIds.push(item);
+      });
+
+      let minDistance = Infinity;
+      let closestShopId;
+
+    for (const shopId of shopIds) {
+      const shop = await User.findById(shopId);
+
+      // Calculate distance between user and shop using Haversine formula
+      const distance = calculateDistance(
+        userLatitude,
+        userLongitude,
+        parseFloat(shop.latitude),
+        parseFloat(shop.longitude)
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestShopId = shopId;
+      }
+      
+    }
+
+    console.log(closestShopId);
+    console.log(minDistance);
 
 
-    res.status(200).json({
-      success: true,
-      order
-    });
+      // Generate random values for razorpay_order_id, razorpay_payment_id, and razorpay_signature
+      const razorpay_order_id = crypto.randomBytes(16).toString('hex');
+      const razorpay_payment_id = crypto.randomBytes(16).toString('hex');
+      const razorpay_signature = crypto.randomBytes(16).toString('hex');
 
+
+
+      // Create entry in Payment collection
+      await Payment.create({
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+          user: userInfo,
+          productData: productInfo,
+          userData,
+          totalAmount,
+          storeId: closestShopId
+      });
+
+      // Delete cart records associated with the user ID
+      await Cart.deleteMany({ user: userInfo });
+
+      res.status(200).json({
+          success: true,
+          message: 'Payment entry created successfully',
+          razorpay_order_id,
+          razorpay_payment_id
+      });
   } catch (error) {
-    console.log(error);
+      console.log(error);
+      res.status(500).json({
+          success: false,
+          message: 'Internal server error'
+      });
   }
-
-
 };
 // 
 

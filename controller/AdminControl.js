@@ -171,7 +171,7 @@ const addProduct = async (req, res) => {
         if (existingProduct) {
             // Update count
             existingProduct.count = parseInt(existingProduct.count) + parseInt(count);
-            console.log(existingProduct.count);
+            // console.log(existingProduct.count);
             // Check if req.user.id is not already in the addedBy array
             if (!existingProduct.addedBy.includes(req.user.id)) {
                 existingProduct.addedBy.push(req.user.id);
@@ -180,7 +180,9 @@ const addProduct = async (req, res) => {
             await existingProduct.save();
 
             // Add product to the user's products array
-            user.products.push({...existingProduct, count: count});
+            // console.log(existingProduct);
+            existingProduct.count =parseInt(count);
+            user.products.push(existingProduct);
             await user.save();
         } else {
             // If the product doesn't exist, create a new one

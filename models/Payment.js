@@ -28,7 +28,10 @@ const PaymentSchema = new Schema({
     totalAmount: {
         type: Number,
     },
-
+    storeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user'
+    },
 
 }, { timestamps: true })
 
