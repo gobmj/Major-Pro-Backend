@@ -198,7 +198,7 @@ const addProduct = async (req, res) => {
                 description, 
                 gender, 
                 count, 
-                addedBy: [req.user._id] 
+                addedBy: [req.user.id]
             });
             // Add product to the user's products array
             user.products.push(newProduct);
