@@ -44,17 +44,20 @@ const checkout = async (req, res) => {
       const userLatitude = parseFloat(latitude);
       const userLongitude = parseFloat(longitude);
 
-
+      console.log(productInfo);
       let shopIds = [];
+      let quantity = 0;
       const productDetailsPromises = productInfo.map(async (item) => {
         const productId = item.productId._id;
         const product = await Product.findById(productId);
-    
+        quantity = item.quantity;
         return { product };
       });
       const productDetail = await Promise.all(productDetailsPromises);
+      // console.log(productDetail[0]);
+      console.log(quantity)
       productDetail[0].product.addedBy.map((item) => {
-        console.log(item);
+        // console.log(item);
         shopIds.push(item);
       });
 
@@ -82,6 +85,16 @@ const checkout = async (req, res) => {
     console.log(closestShopId);
     console.log(minDistance);
 
+    const closestShop = await User.findById(closestShopId);
+
+    for (const item of productDetail) {
+      const product = closestShop.products.find((p) => p._id.toString() === item.product._id.toString());
+      if (product) {
+        // Reduce the quantity of the product
+        product.count -= item.quantity;
+        await closestShop.save();
+      }
+    }
 
       // Generate random values for razorpay_order_id, razorpay_payment_id, and razorpay_signature
       const razorpay_order_id = crypto.randomBytes(16).toString('hex');
